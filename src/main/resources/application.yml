@@ -1,0 +1,15 @@
+resilience4j:
+  circuitbreaker:
+    backends:
+      webClientCircuitBreaker:
+        ringBufferSizeInClosedState: 3
+        ringBufferSizeInHalfOpenState: 2
+        waitInterval: 5000
+        failureRateThreshold: 50
+        eventConsumerBufferSize: 10
+        registerHealthIndicator: true
+management:
+  endpoints:
+    web:
+      exposure:
+        include: '*'
