@@ -1,10 +1,16 @@
 package com.ninja.circuitbreakerexample;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import io.github.resilience4j.circuitbreaker.CircuitBreaker;
 import io.github.resilience4j.circuitbreaker.CircuitBreakerConfig;
 import io.github.resilience4j.circuitbreaker.CircuitBreakerOpenException;
+import io.github.resilience4j.circuitbreaker.CircuitBreakerRegistry;
+import io.github.resilience4j.circuitbreaker.autoconfigure.CircuitBreakerProperties;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import okhttp3.mockwebserver.MockResponse;
@@ -20,14 +26,21 @@ class WebControllerTest {
 	@BeforeEach
 	void setup() {
 		server = new MockWebServer();
-		webController = new WebController(WebClient.create(server.url("/").toString()));
+		CircuitBreakerRegistry mockRegistry = mock(CircuitBreakerRegistry.class);
 
-		webController.setWebClientCircuitBreaker(CircuitBreaker.of(
-				"foo",
-				CircuitBreakerConfig.custom()
-						.ringBufferSizeInClosedState(3)
-						.build()
-		));
+		when(mockRegistry.circuitBreaker(anyString(), any(CircuitBreakerConfig.class)))
+						.thenReturn(CircuitBreaker.of(
+								"foo",
+								CircuitBreakerConfig.custom()
+										.ringBufferSizeInClosedState(3)
+										.build()));
+
+		webController = new WebController(
+				WebClient.create(server.url("/").toString()),
+				mockRegistry,
+				new CircuitBreakerProperties()
+		);
+
 	}
 
 	@Test

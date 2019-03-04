@@ -1,6 +1,7 @@
 package com.ninja.circuitbreakerexample;
 
 import io.github.resilience4j.circuitbreaker.CircuitBreaker;
+import io.github.resilience4j.circuitbreaker.CircuitBreakerRegistry;
 import io.github.resilience4j.circuitbreaker.autoconfigure.CircuitBreakerProperties;
 import io.github.resilience4j.reactor.circuitbreaker.operator.CircuitBreakerOperator;
 import java.time.Duration;
@@ -21,17 +22,18 @@ import reactor.core.publisher.Mono;
  */
 @Slf4j
 @RestController
-@RequiredArgsConstructor
 public class WebController {
 	private final WebClient webClient;
+	private final CircuitBreaker webClientCircuitBreaker;
 
-	@Autowired // props will be auto configured from application.yml
-	public void setCircuitBreakerProperties(CircuitBreakerProperties circuitBreakerProperties) {
-		webClientCircuitBreaker = CircuitBreaker.of("webClientCircuitBreaker", circuitBreakerProperties.createCircuitBreakerConfig("webClientCircuitBreaker"));
+	public WebController(WebClient webClient,
+			CircuitBreakerRegistry circuitBreakerRegistry, CircuitBreakerProperties circuitBreakerProperties) {
+		this.webClient = webClient;
+		this.webClientCircuitBreaker = circuitBreakerRegistry.circuitBreaker(
+				"webClientCircuitBreaker",
+				circuitBreakerProperties.createCircuitBreakerConfig("webClientCircuitBreaker")
+		);
 	}
-
-	@Setter // test purpose
-	private CircuitBreaker webClientCircuitBreaker;
 
 	@GetMapping("/callApi")
 	Mono<Map<String, Object>> callApi() {
